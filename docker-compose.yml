@@ -1,0 +1,43 @@
+networks:
+  static-ip:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+
+
+services:
+  server:
+    image: jetbrains/teamcity-server
+    container_name: teamcity-server
+    volumes:
+      - ./var/teamcity-data:/data/teamcity_server/datadir
+      - ./var/teamcity-logs:/opt/teamcity/logs
+    networks:
+      default: ~
+      static-ip:
+        ipv4_address: 10.5.0.5 # ip for database container
+
+  agent:
+    image: jetbrains/teamcity-agent
+    depends_on:
+      - server
+    container_name: teamcity-agent
+    environment:
+      SERVER_URL: "http://server:8111/"
+    volumes:
+      - ./config/teamcity_agent/buildAgent.properties:/data/teamcity_agent/conf/buildAgent.properties:ro
+
+  postgres:
+    image: postgres:9.6
+    environment:
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $POSTGRES_DB
+    volumes:
+      - ./var/postgres-data:/var/lib/postgresql/data
+    networks:
+      default: ~
+      static-ip:
+        ipv4_address: 10.5.0.10 # ip for database container
+
