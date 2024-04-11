@@ -11,3 +11,5 @@ kill:
 	docker compose kill
 	docker compose rm -f
 
+install:
+	docker compose -f docker-compose.yml -f docker-compose.install.yml  up -d

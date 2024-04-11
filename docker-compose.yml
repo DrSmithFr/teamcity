@@ -8,34 +8,54 @@ networks:
 
 services:
   server:
-    image: jetbrains/teamcity-server
+    image: jetbrains/teamcity-server:2024.03
+    restart: always
     container_name: teamcity-server
     volumes:
-      - ./var/teamcity-data:/data/teamcity_server/datadir
-      - ./var/teamcity-logs:/opt/teamcity/logs
+      - ./var/data/teamcity:/data/teamcity_server/datadir
+      - ./var/logs/teamcity:/opt/teamcity/logs
+    depends_on:
+      - postgres
     networks:
       default: ~
       static-ip:
-        ipv4_address: 10.5.0.5 # ip for database container
+        ipv4_address: 10.5.0.5 # ip for teamcity container
 
   agent:
-    image: jetbrains/teamcity-agent
+    image: jetbrains/teamcity-agent:2024.03
+    restart: always
     depends_on:
       - server
     container_name: teamcity-agent
     environment:
       SERVER_URL: "http://server:8111/"
     volumes:
-      - ./config/teamcity_agent/buildAgent.properties:/data/teamcity_agent/conf/buildAgent.properties:ro
+      - ./config/teamcity-agent/buildAgent.properties:/data/teamcity_agent/conf/buildAgent.properties:ro
+
+  youtrack:
+    image: jetbrains/youtrack:2024.1.27971
+    restart: always
+    volumes:
+      - ./config/youtrack:/opt/youtrack/conf
+      - ./var/data/youtrack:/opt/youtrack/data
+      - ./var/logs/youtrack:/opt/youtrack/logs
+      - ./var/backups/youtrack:/opt/youtrack/backups
+    depends_on:
+      - postgres
+    networks:
+      default: ~
+      static-ip:
+        ipv4_address: 10.5.0.15 # ip for youtrack container
 
   postgres:
     image: postgres:9.6
+    restart: always
     environment:
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
       POSTGRES_DB: $POSTGRES_DB
     volumes:
-      - ./var/postgres-data:/var/lib/postgresql/data
+      - ./var/data/postgres:/var/lib/postgresql/data
     networks:
       default: ~
       static-ip:
